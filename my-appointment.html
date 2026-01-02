@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>我的報名</title>
+  <style>
+    /* Global & Background */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+    }
+    /* Header */
+    .header {
+      width: 100%; padding: 1rem 2rem;
+      display: flex; justify-content: center; align-items: center;
+      flex-shrink: 0;
+    }
+    .header nav a {
+      padding: 0.5rem 1rem; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 20px; background: rgba(255,255,255,0.15);
+      color: #fff; text-decoration: none; transition: background 0.2s;
+      backdrop-filter: blur(5px); margin: 0 0.5rem;
+    }
+    .header nav a:hover { background: rgba(255,255,255,0.3); }
+    /* Card Container */
+    .container {
+      display: flex; justify-content: center; align-items: flex-start; /* Align to top */
+      flex-grow: 1;
+      padding: 1rem;
+      overflow-y: auto; /* Allow scrolling within the container */
+    }
+    .card {
+      width: 100%;
+      max-width: 600px; /* Wider card for lists */
+      padding: 2rem; border-radius: 16px;
+      background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .card h2 { text-align: center; margin-bottom: 1.5rem; font-size: 1.6rem; }
+    /* Message Styles */
+    #message {
+        display: none; /* Hide by default */
+        margin-bottom: 1rem; 
+        padding: 0.75rem;
+        border-radius: 6px; 
+        color: #fff; 
+        text-align: center;
+        background: rgba(220, 53, 69, 0.5); /* Error color */
+    }
+    /* Appointment Item Styling */
+    .appt {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .appt h3 { margin: 0 0 0.5rem; color: #fff; font-size: 1.1rem;}
+    .appt p { margin: 0.25rem 0; color: #eee; }
+  </style>
+</head>
+<body>
+  <header class="header">
+      <nav>
+          <!-- This link takes the user back to the organization selection page -->
+          <a href="/patient-register.html">返回組織列表</a>
+      </nav>
+  </header>
+  
+  <div class="container">
+      <div class="card">
+          <h2>我的報名</h2>
+          <div id="message"></div>
+          <div id="appointments"></div>
+      </div>
+  </div>
+
+  <script>
+    async function loadAppointments() {
+      const container = document.getElementById('appointments');
+      const messageDiv = document.getElementById('message');
+      container.innerHTML = '<p>正在載入…</p>';
+      messageDiv.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/appointments', { credentials: 'include' });
+        const list = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(list.error || '無法取得報名列表');
+        }
+        
+        container.innerHTML = '';
+
+        if (!list.length) {
+          container.innerHTML = '<p>目前尚未報名任何活動。</p>';
+          return;
+        }
+
+        list.forEach(a => {
+          const div = document.createElement('div');
+          div.className = 'appt';
+          div.innerHTML = `
+            <h3>活動名稱：${a.scheduleName || '（無法載入名稱）'}</h3>
+            <p><strong>預約 ID：</strong>${a.appointmentId}</p>
+            <p><strong>開始：</strong>${a.start ? new Date(a.start).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</p>
+            <p><strong>結束：</strong>${a.end   ? new Date(a.end).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' })   : '—'}</p>
+            <p><strong>狀態：</strong>${a.status}</p>
+          `;
+          container.appendChild(div);
+          console.log(a.scheduleName);
+        });
+      } catch(err) {
+        container.innerHTML = '';
+        messageDiv.textContent = err.message;
+        messageDiv.style.display = 'block';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAppointments);
+  </script>
+</body>
+</html>
+
